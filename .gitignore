@@ -1,0 +1,39 @@
+# caution: this file is also used by Azure ML to filter out files that
+# become part of the source code Snapshot.
+
+# NOTE: if you add a file to here that already has been checked in, you should run this command to fix things in the repo:
+# CAUTION: this will DELETE LOCAL COPIES of the file (.env, for example)
+#   git rm -r --cached . && git add . && git commit -am "Remove ignored files"
+
+.idea
+__pycache__
+data
+raw_data
+log
+logs
+ft_train_data
+old_logs
+trash
+azure_errors.txt
+results
+old_results
+output
+*.pt
+.env  
+restart_checkpoint.tcp
+
+liveplot*params.json
+
+example_traces
+examples/design_points/output
+examples/train/snapshots
+checkpoints
+bg_checkpoints
+runs
+test_results
+
+json_weights
+dat_weights
+
+# we want to share launch.json and settings.json, so comment this out
+#.vscode

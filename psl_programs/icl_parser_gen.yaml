@@ -1,0 +1,192 @@
+# icl_example.yaml: parse template and generate template completion
+# updated for "N" and "n" index changes: Oct-02-2024
+registers: {symbol: 's', position: 'p', region: 'r', type: 't', field: 'f', index: 'd', end: 'e', x_temp: 'x', y_temp: 'y', parse: 'a', eop: 'z',
+    prev_symbol: 's*', prev_position: 'p*', prev_region: 'r*', prev_type: 't*', prev_field: 'f*', prev_index: 'd*', prev_end: 'e*'}
+
+constants: {"FQ", "F1", "F2", "FV", "FA", "XQ", "XA", "CQ", "CA", "Q", "A", "C", "D", "S", "R", "T", "0", "1", "BLANK", "EOP"}
+watch: [region, type, field, index]
+system: {symbol: symbol, position: position, output: symbol, parse: parse, eop: eop}
+causal_attn: false
+
+# parse step 0. initialize region, type; field = position
+where position[N] == position[N] and parse[N] == 1:
+    region[N] = R
+    type[N] = T
+    field[N] = position[N]
+    prev_position[N] = 0        # init prev_position of first col=0 (it won't be updated in next step)
+    index[N] = 1
+
+# parse step pre 1. set prev_position and prev_symbol
+where position[n] == position[N]@pos_decrement and parse[N] == 1:
+    prev_position[N] = position[n]
+    prev_symbol[N] = symbol[n]
+
+# parse step 1a. start Example (@p:0): r:XQ, t:D, f:FQ
+where prev_position[N] == 0 and parse[N] == 1:
+    region[N] = XQ
+    type[N] = D
+    field[N] = FQ
+    index[N] = 0
+
+# parse  step 1b. start Context (@2nd Q): r:CQ, t:D, f:FQ
+where symbol[n] == symbol[N] and position[n] == 1 and position[N] != 1 and parse[N] == 1:
+    region[N] = CQ
+    type[N] = D
+    field[N] = FQ
+
+# repeat pre_2a, 2a. propagate XQ rightward 
+repeat:
+    # parse  step pre_2a. set prev_region 
+    where position[n] == position[N]@pos_decrement and parse[N] == 1:
+        prev_region[N] = region[n]
+
+    # parse  step 2a. propagate XQ to 1st t:D (starts r:CQ) 
+    where prev_region[N] == XQ and region[N] == R and parse[N] == 1:
+        region[N] = XQ
+until NO_CHANGE
+
+# repeat pre_2b, 2b: propagate CQ rightward
+repeat:
+    # parse  step pre_2b. set prev_region 
+    where position[n] == position[N]@pos_decrement and parse[N] == 1:
+        prev_region[N] = region[n]
+
+    # parse  step 2b. propagate CQ to input end
+    where prev_region[N] == CQ and region[N] == R and parse[N] == 1:
+        region[N] = CQ
+until NO_CHANGE
+
+# parse  step 3a. start r:XA (f:FA) @A in curr. r:XQ
+where symbol[N] == A and region[N] == XQ and parse[N] == 1:
+    region[N] = XA
+    type[N] = D
+    field[N] = FA
+
+# parse  step 3b. start r:CA (f:FA) @A in curr. r:XQ 
+where symbol[N] == A and region[N] == CQ and parse[N] == 1:
+    region[N] = CA
+    type[N] = D
+    field[N] = FA
+
+# repeat pre_4, 4: propagate XA rightward
+repeat:
+    # parse  step pre_4. set prev_region 
+    where position[n] == position[N]@pos_decrement and parse[N] == 1:
+        prev_region[N] = region[n]
+
+    # parse  step 4. propagate XA to 1st t:D (starts r:CQ) 
+    where (prev_region[N] == XA) and (region[N] == XQ) and (type[N] == T) and parse[N] == 1:
+        region[N] = XA
+until NO_CHANGE     # type[N] == D
+
+# parse  step 5a. symbol in XQ later repeated in CQ: t:D 
+where region[n] == CQ and region[N] == XQ and symbol[n] == symbol[N] and parse[N] == 1:  
+    type[N] = D
+
+# parse  step 5b. symbol in CQ that repeats fr. XQ: t:D, same field
+where (region[n] == XQ) and (region[N] == CQ) and (symbol[n] == symbol[N]) and parse[N] == 1:   
+    field[N] = field[n]
+    type[N] = D
+
+# parse  step 5c. symbol in XA that repeats fr. CQ: t:D, same field
+where (region[n] == CQ) and (region[N] == XA) and (symbol[n] == symbol[N])  and parse[N] == 1:   
+    field[N] = field[n]
+    type[N] = D
+
+# parse  step 6. identical untyped symbols in X have the same C field 
+where symbol[n] == symbol[N] and region[n] == XQ and region[N] == XA and type[N] == T and parse[N] == 1:
+    field[N] = field[n]
+    type[N] = C
+
+# parse  step 7. all unset types are delimiters
+where region[N] == XA and type[N] == T and parse[N] == 1:
+    type[N] = D
+
+# parse step 7'. all remaining unset types are constituents
+where type[N] == T and parse[N] == 1:
+    type[N] = C
+
+# parse  step pre_8. set prev_region, prev_type, prev_field 
+where position[n] == position[N]@pos_decrement and parse[N] == 1:
+    prev_region[N] = region[n]
+    prev_type[N] = type[n]
+    prev_field[N] = field[n]
+
+# parse  step 8. field sequence is the same in XQ and CQ 
+where (prev_region[n] == XQ) and (region[n] == XQ) and (prev_type[n] == D) and (type[n] == C) and (region[N] == CQ) and (prev_type[N] == D) and (type[N] == C) and (prev_field[n] == prev_field[N]) and parse[N] == 1:
+    field[N] = field[n]
+
+# repeat of steps pre_9 and 9: propagate field sequence rightward
+repeat:
+    # parse step pre_9. set prev_field 
+    where position[n] == position[N]@pos_decrement and parse[N] == 1:
+        prev_field[N] = field[n]
+
+    # parse  step 9. constituent fields change only at t:D
+    where prev_type[N] == C and type[N] == C and parse[N] == 1:
+        field[N] = prev_field[N]
+until NO_CHANGE
+
+# we seem to run without this, but include it for reference purposes (matches TF3 version)
+# causal_attn: true
+
+# parse step 10. change in f => d:0 
+where prev_field[N] != field[N] and parse[N] == 1:
+    index[N] = 0
+ 
+# parse step 11 set parse=0 ONLY for the last token of the prompt
+where eop[N] == EOP and parse[N] == 1:
+    parse[N] = 0
+
+#===== generate part ====
+
+# gen step 0. set end = 0, x_temp = 0 globally (use self-attention)
+where position[N] == position[N] and parse[N] == 0:       # [TRUE?? test] do NOT condition this on parse[N] == 0 because we need to set end=0 for all tokens
+    end[N] = 0
+    x_temp[N] = 0
+
+# gen step pre_1. update prev_symbol and prev_field
+where position[n] == position[N]@pos_decrement and parse[N] == 0:
+    prev_symbol[N] = symbol[n]
+    prev_field[N] = field[n]
+
+# gen step 1. find symbol in CQ matching current symbol; IF not field-final, copy next symbol in CQ, set end=1 to block application of remaining productions
+where (region[n] == CQ) and (prev_symbol[n] == symbol[N]) and (prev_field[n] == field[N]) and (index[n] != 0) and parse[N] == 0:
+    end[N] = 1
+    x_temp[N] = 0
+    region[N] = CA
+    symbol[N] = symbol[n]
+    field[N] = field[n]
+    type[N] = type[n]
+    index[N] = index[n]
+
+# gen step pre_2. update prev_field
+where position[n] == position[N]@pos_decrement and parse[N] == 0:
+    prev_field[N] = field[n]
+    prev_region[N] = region[n]
+
+# gen step 2. ELSE find final position of field in XA matching current field, get following field label ff 
+# where (end[n] == end[N]) and (region[n] == XA) and (prev_field[n] == field[N]) and (index[n] == 0) and (prev_region[n] == XA) and parse[N] == 0:
+where (end[N] == 0) and (region[n] == XA) and (prev_field[n] == field[N]) and (index[n] == 0) and (prev_region[n] == XA) and parse[N] == 0:
+    y_temp[N] = field[n]
+
+# gen step 3. IF find initial position in CQ of field ff, copy that symbol and its metadata (except r) and set flag x_temp := 1
+#where (end[n] == end[N]) and (region[n] == CQ) and (field[n] == y_temp[N]) and (index[n] == 0) and parse[N] == 0:
+where (end[N] == 0) and (region[n] == CQ) and (field[n] == y_temp[N]) and (index[n] == 0) and parse[N] == 0:
+    x_temp[N] = 1
+    region[N] = CA
+    symbol[N] = symbol[n]
+    field[N] = field[n]
+    type[N] = type[n]
+    index[N] = index[n]
+
+# gen step 3'. ELSE (when x_temp=0), find initial position in XA of field ff, copy that symbol and its metadata (except r)
+#where (end[n] == end[N]) and (x_temp[N] == 0) and (region[n] == XA) and (field[n] == y_temp[N]) and (index[n] == 0) and parse[N] == 0:
+where (end[N] == 0) and (x_temp[N] == 0) and (region[n] == XA) and (field[n] == y_temp[N]) and (index[n] == 0) and parse[N] == 0:
+    region[N] = CA
+    symbol[N] = symbol[n]
+    field[N] = field[n]
+    type[N] = type[n]
+    index[N] = index[n]
+
+

@@ -1,0 +1,14 @@
+# packages needed for this repo
+anthropic
+together
+vertex
+google-generativeai
+groq
+vertexai
+xai-sdk
+arrow
+pandas
+xtlib==0.0.333
+transformers
+datasets
+accelerate>=0.26.0

@@ -1,0 +1,20 @@
+examples:
+  # tested and working (as of Dec-04-2023)
+  john_loves_mary:    {prompt: "Q john loves mary A mary hugs john . Q sue loves bill A", gold: "bill hugs sue ."}
+  swap:               {prompt: "Q B V D E A D E V B . Q F G H V K L A", gold: "K L V F G H ."}
+  implication2:       {prompt: "Q x = > y A y or not x . Q ( u and v ) = > z A", gold: "z or not ( u and v ) ."}
+  active_to_passive:  {prompt: "Q x V y A y Was V By x . Q u V w A", gold: "w Was V By u ."}
+  active_to_passive_long:  {prompt: "Q x V y A y Was V -en By x . Q u1 u2 V w1 w2 w3 A", gold: "w1 w2 w3 Was V -en By u1 u2 ."}
+  swap_orig:               {prompt: "Q B V D E A D E V B . Q F G H V K L A", gold: "K L V F G H ."}
+  cross_mult:         {prompt: "Q ( x / y ) /// (( u // v )) A ( x * v ) / (( y ** u )) . Q ( a / b ) /// (( c // d )) A", gold: "( a * d ) / (( b ** c )) ."}
+  implication:        {prompt: "Q x => y A y or not x . Q ( u and v ) => z A", gold: "z or not ( u and v ) ."}
+  tgt_ex_1:           {prompt: "Q the big bear ? a red car A the big bear $ . Q some baby cub ? one small house A", gold: "some baby cub $ ."}
+  tgt_ex_2:           {prompt: "Q - his green bird A his green bird . Q - some light monkey A", gold: "some light monkey ."}
+  tgt_ex_3:           {prompt: "Q long house = cold bush ^ warm road A warm road < cold bush { long house . Q dark cat = tall fish ^ easy bear A", gold: "easy bear < tall fish { dark cat ."}
+  tgt_ex_4:           {prompt: "Q short tiger / < tall zebra ) ` dirty building A dirty building = < short tiger | tall zebra ; . Q wide bear / < warm tree ) ` cool car A", gold: "cool car = < wide bear | warm tree ; ."}
+  tgt_ex_5:           {prompt: "Q some cold bear A $ some cold bear . Q that wide lioness A", gold: "$ that wide lioness ."}
+  tgt_v9_1:           {prompt: "Q ml el * } ww nx ki qs af % + si te gx | A ww nx ki qs af + [ ml el . Q eq ve bb zt * } rt % + fa fr wn | A", gold: "rt + [ eq ve bb zt ."}
+  tgt_v9_2:           {prompt: "Q ~ es zd ey db ak ) fx $ { tr dz , + vj kj zo % jq hu rd ag A _ vj kj zo $ es zd ey db ak / jq hu rd ag * fx . Q ~ dv he ) vv bo td $ { xh dp qc my mz , + qk % hw oc cw uh A", gold: "_ qk $ dv he / hw oc cw uh * vv bo td ."}
+  tgt_v9_3:           {prompt: "Q ∼ es zd ey db ak ) fx $ { tr dz , + vj kj zo % jq hu rd ag A vj kj zo $ es zd ey db ak / jq hu rd ag * fx . Q ∼ dv he ) vv bo td $ { xh dp qc my mz , + qk % hw oc cw uh A", gold: "qk $ dv he / hw oc cw uh * vv bo td ."}
+
+  
